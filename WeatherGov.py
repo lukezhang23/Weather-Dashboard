@@ -1,18 +1,45 @@
-import geojson
-import pprint as pp
-import geopandas as gpd
+import requests
+import matplotlib.pyplot as plt
+from datetime import datetime
+import matplotlib.dates as mdates
 
-with open('hourly.geojson', 'r') as file:
-    geojson_data = geojson.load(file)
+# Pull data off API
+response = requests.get("https://api.weather.gov/gridpoints/LWX/97,71").json()
 
-# Now, let's print the GeoJSON data to understand its structure
-pp.pprint(dict(geojson_data))
-print(type(geojson_data))
+# Create subset of temperatures
+temps = response["properties"]["temperature"]["values"]
 
-# Load the GeoJSON file into a GeoDataFrame
-gdf = gpd.read_file('hourly.geojson')
+# Create time and temperature lists
+timeList = []
+for x in temps:
+    timeList.append(x["validTime"])
+tempList = []
+for x in temps:
+    fahrenheit = (x["value"] * 1.8) + 32
+    tempList.append(fahrenheit)
 
-# If you just want a standard pandas DataFrame (and not GeoDataFrame), you can convert:
-df = gdf.drop(columns='geometry')  # Drop the geometry column if needed
 
-gdf
+# Function to parse the ISO date-time string and ignore the duration part
+def parse_iso8601_time(iso_time_str):
+    # Split the string by '/' and take the first part (before '/PT1H')
+    time_str = iso_time_str.split('/')[0]
+
+    # Parse the time string to a datetime object
+    return datetime.fromisoformat(time_str)
+
+
+# Convert timeList to valid_times
+valid_times = []
+for i in timeList:
+    valid_times.append(parse_iso8601_time(i))
+
+# Plot the line chart
+plt.plot(valid_times, tempList, marker='o')
+
+# Format the x-axis to display dates nicely
+plt.gcf().autofmt_xdate()  # Auto-rotate dates for better readability
+plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M'))  # Custom date format
+
+# Display the plot
+plt.tight_layout()
+plt.show()
