@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import requests
 from datetime import datetime
-from geopy.adapters import RequestsAdapter
 from geopy.geocoders import Nominatim
 import os
 import certifi
