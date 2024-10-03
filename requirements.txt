@@ -1,0 +1,7 @@
+openmeteo_requests
+pandas
+streamlit
+requests
+certifi
+geopy
+matplotlib
