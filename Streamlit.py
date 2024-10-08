@@ -9,14 +9,14 @@ import certifi
 os.environ['SSL_CERT_FILE'] = certifi.where()
 
 # Input field to type a city name
-city_input = st.text_input("City:", value="Columbus")
+city_input = st.text_input("Location:", value="Morrill Tower")
 
 # Geocode the City
 geolocator = Nominatim(user_agent=st.secrets["email"])
 location = geolocator.geocode(city_input)
 
 # Find correct weather station in API
-headers = {"User-Agent" : st.secrets["email"]}
+headers = {"User-Agent": st.secrets["email"]}
 locationResponse = requests.get(f'https://api.weather.gov/points/{location.latitude},{location.longitude}',
                                 headers=headers).json()
 gridpointsURL = locationResponse["properties"]["forecastGridData"]
@@ -53,9 +53,15 @@ for i in timeList:
 
 # Dataframe of temp vs time
 chart_data = pd.DataFrame(tempList,
-     valid_times)
+                          valid_times)
+
+# Creating dataframe for map
+mapData = pd.DataFrame({
+    'lat': [location.latitude],
+    'lon': [location.longitude]
+})
 
 # Streamlit Display
-
-st.title("Sample Weather Dashboard")
+st.title("Weather Forecast")
+st.map(mapData, size=0)
 st.line_chart(chart_data, x_label="Date", y_label="Temperature")
