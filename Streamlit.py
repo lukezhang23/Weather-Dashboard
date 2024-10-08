@@ -12,11 +12,13 @@ os.environ['SSL_CERT_FILE'] = certifi.where()
 city_input = st.text_input("City:", value="Columbus")
 
 # Geocode the City
-geolocator = Nominatim(user_agent="zhang.13813@buckeyemail.osu.edu")
+geolocator = Nominatim(user_agent=email)
 location = geolocator.geocode(city_input)
 
 # Find correct weather station in API
-locationResponse = requests.get(f'https://api.weather.gov/points/{location.latitude},{location.longitude}').json()
+headers = {"User-Agent" : email}
+locationResponse = requests.get(f'https://api.weather.gov/points/{location.latitude},{location.longitude}',
+                                headers=headers).json()
 gridpointsURL = locationResponse["properties"]["forecastGridData"]
 
 # Pull data off API
