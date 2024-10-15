@@ -2,9 +2,9 @@ import streamlit as st
 import pandas as pd
 import requests
 from datetime import datetime
-from geopy.geocoders import Nominatim
 import os
 import certifi
+import urllib.parse
 
 os.environ['SSL_CERT_FILE'] = certifi.where()
 
@@ -12,12 +12,15 @@ os.environ['SSL_CERT_FILE'] = certifi.where()
 city_input = st.text_input("Location:", value="Morrill Tower")
 
 # Geocode the City
-geolocator = Nominatim(user_agent=st.secrets["email"])
-location = geolocator.geocode(city_input)
+parsedCity = urllib.parse.quote(city_input)
+geoapifyUrl = f'https://api.geoapify.com/v1/geocode/search?text={parsedCity}&apiKey={st.secrets["geoapifyKey"]}'
+geocodeResponse = requests.get(geoapifyUrl).json()
+latitude = geocodeResponse["features"][0]["properties"]["lat"]
+longitude = geocodeResponse["features"][0]["properties"]["lon"]
 
 # Find correct weather station in API
 headers = {"User-Agent": st.secrets["email"]}
-locationResponse = requests.get(f'https://api.weather.gov/points/{location.latitude},{location.longitude}',
+locationResponse = requests.get(f'https://api.weather.gov/points/{latitude},{longitude}',
                                 headers=headers).json()
 gridpointsURL = locationResponse["properties"]["forecastGridData"]
 
@@ -57,8 +60,8 @@ chart_data = pd.DataFrame(tempList,
 
 # Creating dataframe for map
 mapData = pd.DataFrame({
-    'lat': [location.latitude],
-    'lon': [location.longitude]
+    'lat': [latitude],
+    'lon': [longitude]
 })
 
 # Streamlit Display
