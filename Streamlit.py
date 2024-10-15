@@ -87,3 +87,4 @@ mapData = pd.DataFrame({
 st.title("Weather Forecast")
 st.map(mapData, size=0)
 st.line_chart(chart_data, x_label="Date", y_label="Temperature")
+st.markdown('Powered by [Geoapify](https://www.geoapify.com/)')
