@@ -8,19 +8,48 @@ import urllib.parse
 
 os.environ['SSL_CERT_FILE'] = certifi.where()
 
+
+class Location:
+    def __init__(self, latitude, longitude):
+        self.latitude = latitude
+        self.longitude = longitude
+
+
+def geocode_city(city):
+    # Special case handling for "Morrill Tower"
+    if city.lower() == "morrill tower":
+        return Location(40.0002, -83.0220)
+
+    # Make the request to Geoapify
+    parsed_city = urllib.parse.quote(city)
+    geoapify_url = f'https://api.geoapify.com/v1/geocode/search?text={parsed_city}&apiKey={st.secrets["geoapifyKey"]}'
+    geocode_response = requests.get(geoapify_url).json()
+
+    # Extract latitude and longitude from the response
+    found_latitude = geocode_response["features"][0]["properties"]["lat"]
+    found_longitude = geocode_response["features"][0]["properties"]["lon"]
+
+    return Location(found_latitude, found_longitude)
+
+
+# Function to parse the ISO date-time string and ignore the duration part
+def parse_iso8601_time(iso_time_str):
+    # Split the string by '/' and take the first part (before '/PT1H')
+    time_str = iso_time_str.split('/')[0]
+
+    # Parse the time string to a datetime object
+    return datetime.fromisoformat(time_str)
+
+
 # Input field to type a city name
 city_input = st.text_input("Location:", value="Morrill Tower")
 
-# Geocode the City
-parsedCity = urllib.parse.quote(city_input)
-geoapifyUrl = f'https://api.geoapify.com/v1/geocode/search?text={parsedCity}&apiKey={st.secrets["geoapifyKey"]}'
-geocodeResponse = requests.get(geoapifyUrl).json()
-latitude = geocodeResponse["features"][0]["properties"]["lat"]
-longitude = geocodeResponse["features"][0]["properties"]["lon"]
+# Geocode the city
+location = geocode_city(city_input)
 
 # Find correct weather station in API
 headers = {"User-Agent": st.secrets["email"]}
-locationResponse = requests.get(f'https://api.weather.gov/points/{latitude},{longitude}',
+locationResponse = requests.get(f'https://api.weather.gov/points/{location.latitude},{location.longitude}',
                                 headers=headers).json()
 gridpointsURL = locationResponse["properties"]["forecastGridData"]
 
@@ -39,16 +68,6 @@ for x in temps:
     fahrenheit = (x["value"] * 1.8) + 32
     tempList.append(fahrenheit)
 
-
-# Function to parse the ISO date-time string and ignore the duration part
-def parse_iso8601_time(iso_time_str):
-    # Split the string by '/' and take the first part (before '/PT1H')
-    time_str = iso_time_str.split('/')[0]
-
-    # Parse the time string to a datetime object
-    return datetime.fromisoformat(time_str)
-
-
 # Convert timeList to valid_times
 valid_times = []
 for i in timeList:
@@ -60,8 +79,8 @@ chart_data = pd.DataFrame(tempList,
 
 # Creating dataframe for map
 mapData = pd.DataFrame({
-    'lat': [latitude],
-    'lon': [longitude]
+    'lat': [location.latitude],
+    'lon': [location.longitude]
 })
 
 # Streamlit Display
