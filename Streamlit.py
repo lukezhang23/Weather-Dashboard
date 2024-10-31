@@ -117,6 +117,23 @@ def parse_iso8601_time(iso_time_str):
     return datetime.fromisoformat(time_str)
 
 
+# Function to get autocomplete suggestions from geoapify
+def get_autocomplete_suggestions(query):
+    try:
+        response = requests.get("https://api.geoapify.com/v1/geocode/autocomplete?" +
+                                f"text={query}&apiKey={st.secrets["geoapifyKey"]}").json()
+        if response["results"]:
+            result = []
+            for i in range(len(response["results"])):
+                result.append([response["results"][i]["name"], response["results"][i]["formatted"]])
+            return result
+        else:
+            return []
+    except Exception as e:
+        st.error(f"Error fetching suggestions: {e}")
+        return []
+
+
 # Input field to type a city name
 city_input = st.text_input("Location:", value="Morrill Tower")
 
