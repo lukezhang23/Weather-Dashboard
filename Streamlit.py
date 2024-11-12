@@ -121,11 +121,12 @@ def parse_iso8601_time(iso_time_str):
 def get_autocomplete_suggestions(query):
     try:
         response = requests.get("https://api.geoapify.com/v1/geocode/autocomplete?" +
-                                f"text={query}&apiKey={st.secrets["geoapifyKey"]}").json()
+                                f"text={query}&format=json&apiKey={st.secrets["geoapifyKey"]}").json()
         if response["results"]:
             result = []
             for i in range(len(response["results"])):
-                result.append([response["results"][i]["name"], response["results"][i]["formatted"]])
+                # Use the most specific category available
+                result.append(response["results"][i]["formatted"])
             return result
         else:
             return []
@@ -134,8 +135,30 @@ def get_autocomplete_suggestions(query):
         return []
 
 
+def suggestion_trigger():
+    if 'selected_suggestion' in st.session_state:
+        st.session_state["field_value"] = st.session_state["selected_suggestion"]
+
+
+def initialize_session_state():
+    if "field_value" not in st.session_state:
+        st.session_state["field_value"] = "Morrill Tower"
+    if "last_typed_value" not in st.session_state:
+        st.session_state["last_typed_value"] = st.session_state["field_value"]
+    if "suggestions" not in st.session_state:
+        st.session_state["suggestions"] = []
+
+
+initialize_session_state()
 # Input field to type a city name
-city_input = st.text_input("Location:", value="Morrill Tower")
+city_input = st.text_input("Location:", value=st.session_state["field_value"])
+
+if city_input != st.session_state["last_typed_value"]:
+    st.session_state["last_typed_value"] = city_input
+    if city_input == st.session_state["last_typed_value"]:
+        st.session_state["suggestions"] = get_autocomplete_suggestions(city_input)
+if st.session_state["suggestions"]:
+    st.pills("Suggestions", st.session_state["suggestions"],on_change=suggestion_trigger, key="selected_suggestion")
 
 # Make API calls for data
 location = geocode_city(city_input)
