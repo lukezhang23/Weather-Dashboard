@@ -18,6 +18,7 @@ class Weather:
         self.status = status
 
 
+@st.cache_data(show_spinner=False,ttl=60)
 def get_weather_data(latitude, longitude):
     """
     Fetches temperature data for a given location using the National Weather Service API.
@@ -68,7 +69,7 @@ def streamlit_output(coordinates, temps, location_status, weather_status):
     elif location_status == "not in us":
         st.text("Location not in the United States, please select a different location.")
     elif weather_status == "weathergov error":
-        st.text("Error, please try another location. (Weather.gov retrieval error)")
+        st.text("Error, please try another location. If you believe this is a mistake please try again in 1 minute.")
     else:
         st.text("Error, please try another location (Uncaught error)")
 
@@ -76,6 +77,7 @@ def streamlit_output(coordinates, temps, location_status, weather_status):
     st.markdown('Powered by [Geoapify](https://www.geoapify.com/)')
 
 
+@st.cache_data(show_spinner=False, ttl=43200)
 def geocode_city(city):
     # Morrill Tower coordinates
     found_latitude = 40.00007409649716
@@ -118,6 +120,7 @@ def parse_iso8601_time(iso_time_str):
 
 
 # Function to get autocomplete suggestions from geoapify
+@st.cache_data(show_spinner=False, ttl=43200)
 def get_autocomplete_suggestions(query):
     try:
         response = requests.get("https://api.geoapify.com/v1/geocode/autocomplete?" +
@@ -125,8 +128,8 @@ def get_autocomplete_suggestions(query):
         if response["results"]:
             result = []
             for i in range(len(response["results"])):
-                # Use the most specific category available
-                result.append(response["results"][i]["formatted"])
+                if response["results"][i]["country_code"] == "us":
+                    result.append(response["results"][i]["formatted"])
             return result
         else:
             return []
