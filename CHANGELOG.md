@@ -11,11 +11,13 @@ the following form: YYYY.0M.0D.
 ### Added
 
 - Changelog
+- Gitignore
 
 ### Updated
 
 - Made Geoapify API Calls biased towards US locations
 - Uses first US geocoding coordinates returned by Geoapify geocoder instead of the first result in the world
+- ReadMe to include information about Geoapify
 
 ## 2024.11.14
 
