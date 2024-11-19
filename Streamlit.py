@@ -18,7 +18,7 @@ class Weather:
         self.status = status
 
 
-@st.cache_data(show_spinner=False,ttl=60)
+@st.cache_data(show_spinner=False, ttl=60)
 def get_weather_data(latitude, longitude):
     """
     Fetches temperature data for a given location using the National Weather Service API.
@@ -90,7 +90,7 @@ def geocode_city(city):
         # Make the request to Geoapify
         parsed_city = urllib.parse.quote(city)
         geoapify_url = (f'https://api.geoapify.com/v1/geocode/search?text={parsed_city}&format=json'
-                        f'&apiKey={st.secrets["geoapifyKey"]}')
+                        f'&apiKey={st.secrets["geoapifyKey"]}&bias=countrycode:us')
         geocode_response = requests.get(geoapify_url).json()
 
         # Check that location was found
@@ -98,15 +98,17 @@ def geocode_city(city):
             status = "location not found"
 
         else:
-            # Check that location is in United States
-            if geocode_response["results"][0]["country_code"] != "us":
+            found = False
+            i = 0
+            while not found and i < len(geocode_response["results"]):
+                # Check that location is in United States
+                if geocode_response["results"][i]["country_code"] == "us":
+                    found_latitude = geocode_response["results"][i]["lat"]
+                    found_longitude = geocode_response["results"][i]["lon"]
+                    found = True
+                i += 1
+            if not found:
                 status = "not in us"
-
-            else:
-                # Extract latitude and longitude from the response
-                found_latitude = geocode_response["results"][0]["lat"]
-                found_longitude = geocode_response["results"][0]["lon"]
-
     return Location(found_latitude, found_longitude, status)
 
 
@@ -124,7 +126,7 @@ def parse_iso8601_time(iso_time_str):
 def get_autocomplete_suggestions(query):
     try:
         response = requests.get("https://api.geoapify.com/v1/geocode/autocomplete?" +
-                                f"text={query}&format=json&apiKey={st.secrets["geoapifyKey"]}").json()
+                                f"text={query}&format=json&apiKey={st.secrets["geoapifyKey"]}&bias=countrycode:us").json()
         if response["results"]:
             result = []
             for i in range(len(response["results"])):
@@ -161,7 +163,7 @@ if city_input != st.session_state["last_typed_value"]:
     if city_input == st.session_state["last_typed_value"]:
         st.session_state["suggestions"] = get_autocomplete_suggestions(city_input)
 if st.session_state["suggestions"]:
-    st.pills("Suggestions", st.session_state["suggestions"],on_change=suggestion_trigger, key="selected_suggestion")
+    st.pills("Suggestions", st.session_state["suggestions"], on_change=suggestion_trigger, key="selected_suggestion")
 
 # Make API calls for data
 location = geocode_city(city_input)
