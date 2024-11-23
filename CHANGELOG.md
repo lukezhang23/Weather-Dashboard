@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Calendar Versioning](https://calver.org/) of
 the following form: YYYY.0M.0D.
 
+## 2024.11.22
+
+### Added
+
+- Tutorial link in ReadMe
+
 ## 2024.11.19
 
 ### Added
@@ -63,6 +69,7 @@ the following form: YYYY.0M.0D.
 ## 2024.10.8
 
 ### Added
+
 - Main Streamlit dashboard that displays a graph for a user inputted location. It uses Nominatim geocoding and WeatherGov API calls
 
 ## 2024.10.1
