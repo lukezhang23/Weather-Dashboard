@@ -3,6 +3,14 @@ import pandas as pd
 import requests
 from datetime import datetime
 import urllib.parse
+from enum import Enum
+
+
+class Status(Enum):
+    GOOD = 1
+    LOCATION_NOT_FOUND = 2
+    NOT_IN_US = 3
+    WEATHER_GOV_ERROR = 4
 
 
 class Location:
@@ -40,7 +48,7 @@ def get_weather_data(latitude, longitude):
         temps = response.json()["properties"]["temperature"]["values"]
 
     except requests.exceptions.RequestException:
-        return Weather(None, "weathergov error")
+        return Weather(None, Status.WEATHER_GOV_ERROR)
 
     # Extract times and convert temperatures to Fahrenheit
     time_list = [x["validTime"] for x in temps]
@@ -52,23 +60,23 @@ def get_weather_data(latitude, longitude):
     # Create DataFrame that holds weather data
     weatherdf = pd.DataFrame(temp_list, index=valid_times, columns=["Temperature (°F)"])
 
-    return Weather(weatherdf, "good")
+    return Weather(weatherdf, Status.GOOD)
 
 
 def streamlit_output(coordinates, temps, location_status, weather_status):
     st.title("Weather Forecast")
 
     # Regular output for good status
-    if location_status == "good" and weather_status == "good":
+    if location_status == Status.GOOD and weather_status == Status.GOOD:
         st.map(coordinates, size=0)
         st.line_chart(temps, x_label="Date", y_label="Temperature")
 
     # Error outputs for error statuses
-    elif location_status == "location not found":
+    elif location_status == Status.LOCATION_NOT_FOUND:
         st.text("Location not found, please try another location. (Geoapify retrieval error)")
-    elif location_status == "not in us":
+    elif location_status == Status.NOT_IN_US:
         st.text("Location not in the United States, please select a different location.")
-    elif weather_status == "weathergov error":
+    elif weather_status == Status.WEATHER_GOV_ERROR:
         st.text("Error, please try another location. If you believe this is a mistake please try again in 1 minute.")
     else:
         st.text("Error, please try another location (Uncaught error)")
@@ -82,7 +90,7 @@ def geocode_city(city):
     # Morrill Tower coordinates
     found_latitude = 40.00007409649716
     found_longitude = -83.0219446815833
-    status = "good"
+    status = Status.GOOD
 
     # If not Morrill Tower, find coordinates
     if city.lower() != "morrill tower":
@@ -95,7 +103,7 @@ def geocode_city(city):
 
         # Check that location was found
         if not geocode_response["results"]:
-            status = "location not found"
+            status = Status.LOCATION_NOT_FOUND
 
         else:
             found = False
@@ -108,7 +116,7 @@ def geocode_city(city):
                     found = True
                 i += 1
             if not found:
-                status = "not in us"
+                status = Status.NOT_IN_US
     return Location(found_latitude, found_longitude, status)
 
 
