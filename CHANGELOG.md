@@ -10,7 +10,7 @@ the following form: YYYY.0M.0D.
 
 ### Updated
 
--Fixed issue where identical temperatures over multiple hours were only plotted at the first hour, ensuring all hours are now correctly represented.
+- Fixed issue where identical temperatures over multiple hours were only plotted at the first hour, ensuring all hours are now correctly represented.
 
 ## 2024.11.22
 
