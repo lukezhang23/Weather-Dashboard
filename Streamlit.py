@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 import urllib.parse
 from enum import Enum
 
@@ -45,20 +45,12 @@ def get_weather_data(latitude, longitude):
         # Get temperature data from the forecast grid
         response = requests.get(gridpoints_url, headers=headers)
         response.raise_for_status()
-        temps = response.json()["properties"]["temperature"]["values"]
 
     except requests.exceptions.RequestException:
         return Weather(None, Status.WEATHER_GOV_ERROR)
 
-    # Extract times and convert temperatures to Fahrenheit
-    time_list = [x["validTime"] for x in temps]
-    temp_list = [(x["value"] * 1.8) + 32 for x in temps]  # Convert from Celsius to Fahrenheit
-
-    # Parse ISO8601 time strings into datetime objects
-    valid_times = [parse_iso8601_time(t) for t in time_list]
-
-    # Create DataFrame that holds weather data
-    weatherdf = pd.DataFrame(temp_list, index=valid_times, columns=["Temperature (°F)"])
+    #Extracting time and temperature (c-->f) to dataframe
+    weatherdf = extract_to_df(response.json(), "temperature")
 
     return Weather(weatherdf, Status.GOOD)
 
@@ -120,14 +112,28 @@ def geocode_city(city):
     return Location(found_latitude, found_longitude, status)
 
 
-# Function to parse the ISO date-time string and ignore the duration part
-def parse_iso8601_time(iso_time_str):
-    # Split the string by '/' and take the first part (before '/PT1H')
-    time_str = iso_time_str.split('/')[0]
+# Function to convert json into a dataframe
+def extract_to_df(json, property):
 
-    # Parse the time string to a datetime object
-    return datetime.fromisoformat(time_str)
+    df = pd.DataFrame(columns=[property])
+    values = json["properties"][property]["values"]
 
+    for entry in values:
+        start_time, duration = entry["validTime"].split("/")
+        start_dt = datetime.fromisoformat(start_time)  # Convert to datetime
+        hours = int(duration.replace("PT", "").replace("H", ""))  # Extract duration in hours
+
+        # Add an entry for each hour in the duration
+        for hour_offset in range(hours):
+            time_entry = [start_dt + timedelta(hours=hour_offset)]
+            temp_entry = [(entry["value"] * 1.8) + 32]
+            df_entry = pd.DataFrame(temp_entry, index=time_entry, columns=[property])
+            if df.empty: # Avoids concatenation of an empty df
+                df = df_entry
+            else:
+                df = pd.concat([df, df_entry])
+
+    return df
 
 # Function to get autocomplete suggestions from geoapify
 @st.cache_data(show_spinner=False, ttl=43200)

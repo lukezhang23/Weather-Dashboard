@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Calendar Versioning](https://calver.org/) of
 the following form: YYYY.0M.0D.
 
+## 2025.2.7
+
+### Updated
+
+-Fixed issue where identical temperatures over multiple hours were only plotted at the first hour, ensuring all hours are now correctly represented.
+
 ## 2024.11.22
 
 ### Added
