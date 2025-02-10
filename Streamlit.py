@@ -8,9 +8,10 @@ from enum import Enum
 
 class Status(Enum):
     GOOD = 1
-    LOCATION_NOT_FOUND = 2
-    NOT_IN_US = 3
-    WEATHER_GOV_ERROR = 4
+    INVALID_GEOAPIFY_SEARCH = 2
+    LOCATION_NOT_FOUND = 3
+    NOT_IN_US = 4
+    WEATHER_GOV_ERROR = 5
 
 
 class Location:
@@ -64,14 +65,16 @@ def streamlit_output(coordinates, temps, location_status, weather_status):
         st.line_chart(temps, x_label="Date", y_label="Temperature")
 
     # Error outputs for error statuses
+    elif location_status == Status.INVALID_GEOAPIFY_SEARCH:
+        st.error("Invalid search.")
     elif location_status == Status.LOCATION_NOT_FOUND:
-        st.text("Location not found, please try another location. (Geoapify retrieval error)")
+        st.error("Location not found, please try another location. (Geoapify retrieval error)")
     elif location_status == Status.NOT_IN_US:
-        st.text("Location not in the United States, please select a different location.")
+        st.error("Location not in the United States, please select a different location.")
     elif weather_status == Status.WEATHER_GOV_ERROR:
-        st.text("Error, please try another location. If you believe this is a mistake please try again in 1 minute.")
+        st.error("Error, please try another location. If you believe this is a mistake please try again in 1 minute.")
     else:
-        st.text("Error, please try another location (Uncaught error)")
+        st.error("Error, please try another location (Uncaught error)")
 
     # Geoapify attribution
     st.markdown('Powered by [Geoapify](https://www.geoapify.com/)')
@@ -93,8 +96,12 @@ def geocode_city(city):
                         f'&apiKey={st.secrets["geoapifyKey"]}&bias=countrycode:us')
         geocode_response = requests.get(geoapify_url).json()
 
+        # Check that search is not a bad request
+        if "results" not in geocode_response:
+            status = Status.INVALID_GEOAPIFY_SEARCH
+
         # Check that location was found
-        if not geocode_response["results"]:
+        elif not geocode_response["results"]:
             status = Status.LOCATION_NOT_FOUND
 
         else:
