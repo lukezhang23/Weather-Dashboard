@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Calendar Versioning](https://calver.org/) of
 the following form: YYYY.0M.0D.
 
+## 2025.2.10
+
+### Added
+
+- Added a error message when the city input field is left blank.
+
+### Updated
+
+- Updated error messages to appear in error boxes instead of regular text
+
 ## 2025.2.7
 
 ### Updated
